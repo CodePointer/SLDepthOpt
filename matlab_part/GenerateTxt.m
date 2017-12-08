@@ -6,7 +6,7 @@ error_thred = 4.0;
 
 % Pattern: pattern.png -> pattern.txt
 pat_img = imread('pattern_2size2color8P0.png');
-pat_img_d = double(pat_img);
+pat_img_d = (double(pat_img) / 255) * 50 + 50;
 save('pattern.txt', 'pat_img_d', '-ascii');
 
 % Weight: weight.txt
