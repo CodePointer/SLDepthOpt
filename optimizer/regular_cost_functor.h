@@ -5,7 +5,6 @@
 #ifndef DEPTHOPTIMIZATION_REGULAR_COST_FUNCTOR_H
 #define DEPTHOPTIMIZATION_REGULAR_COST_FUNCTOR_H
 
-
 #include "image_cost_functor.h"
 
 class RegularCostFunctor {

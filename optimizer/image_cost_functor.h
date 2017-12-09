@@ -39,7 +39,7 @@ public:
     sResiduals[0] = (img_k_head - T(this->img_k_));
 
     if (ceres::IsNaN(sResiduals[0])) {
-      system("PAUSE")a
+      system("PAUSE");
     }
 
     return true;
