@@ -11,6 +11,7 @@ ImageOptimizer::ImageOptimizer(
     ImgMatrix epi_mat_A, ImgMatrix epi_mat_B,
     ImgMatrix mat_M, ImgMatrix mat_D) : pattern_img_(pattern_img),
                                         weight_img_(weight_img) {
+  this->problem_ = nullptr;
   this->depth_mat_ = depth_mat;
   this->img_obs_ = img_obs;
   this->img_mask_ = img_mask;
@@ -20,12 +21,12 @@ ImageOptimizer::ImageOptimizer(
   this->mat_D_ = mat_D;
 
   this->alpha_ = alpha;
-  ceres::Grid2D<double, 1> pat_grid(this->pattern_img_.data(),
-                                    0, kProHeight, 0, kProWidth);
-  this->pattern_ = new ceres::BiCubicInterpolator<ceres::Grid2D<double, 1>>(pat_grid);
-  ceres::Grid2D<double, 1> wet_grid(this->weight_img_.data(),
-                                    0, kProHeight, 0, kProWidth);
-  this->weight_ = new ceres::BiCubicInterpolator<ceres::Grid2D<double, 1>>(wet_grid);
+  ceres::Grid2D<double, 1> * pat_grid = new ceres::Grid2D<double, 1>(
+      this->pattern_img_.data(), 0, kProHeight, 0, kProWidth);
+  this->pattern_ = new ceres::BiCubicInterpolator<ceres::Grid2D<double, 1>>(*pat_grid);
+  ceres::Grid2D<double, 1> * wet_grid = new ceres::Grid2D<double, 1>(
+      this->weight_img_.data(), 0, kProHeight, 0, kProWidth);
+  this->weight_ = new ceres::BiCubicInterpolator<ceres::Grid2D<double, 1>>(*wet_grid);
 }
 
 ImageOptimizer::~ImageOptimizer() {
@@ -54,7 +55,13 @@ ImgMatrix ImageOptimizer::Run() {
       }
       this->AddDataResidualBlock(h, w);
       if ((h >= 1) && (h < kCamHeight - 1) && (w >= 1) && (w < kCamWidth - 1)) {
-        this->AddRegularResidualBlock(h, w);
+        bool valid_up = this->img_mask_(h-1, w) > 0.5;
+        bool valid_dn = this->img_mask_(h+1, w) > 0.5;
+        bool valid_lt = this->img_mask_(h, w-1) > 0.5;
+        bool valid_rt = this->img_mask_(h, w+1) > 0.5;
+        if (valid_up && valid_dn && valid_lt && valid_rt) {
+          this->AddRegularResidualBlock(h, w);
+        }
       }
       block_num++;
     }
@@ -74,6 +81,8 @@ void ImageOptimizer::AddDataResidualBlock(int h, int w) {
   epi_A = this->epi_mat_A_(h, w);
   epi_B = this->epi_mat_B_(h, w);
 
+//  double x = 0;
+//  pattern_->Evaluate(119.53, 556.65, &x);
   ceres::CostFunction * cost_fun =
       new ceres::AutoDiffCostFunction<ImageCostFunctor, 1, 1>(
           new ImageCostFunctor(*pattern_, *weight_, cvec_idx, img_k, vec_M,
@@ -90,7 +99,7 @@ void ImageOptimizer::AddRegularResidualBlock(int h, int w) {
   int idx_dn = (h + 1) * kCamWidth + w;
 
   ceres::CostFunction * cost_fun =
-      new ceres::AutoDiffCostFunction<RegularCostFunctor, 1, 1, 1, 1, 1>(
+      new ceres::AutoDiffCostFunction<RegularCostFunctor, 1, 1, 1, 1, 1, 1>(
           new RegularCostFunctor(this->alpha_));
   this->problem_->AddResidualBlock(cost_fun, NULL,
                                    &this->depth_mat_.data()[idx_k],
