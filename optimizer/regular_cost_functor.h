@@ -16,7 +16,7 @@ public:
   bool operator()(const T* const d_k, const T* const d_up,
                   const T* const d_lf, const T* const d_rt,
                   const T* const d_dn, T* residual) const {
-    residual[0] = T(this->alpha_) * (T(4.0) * d_k - d_up - d_dn - d_lf - d_rt);
+    residual[0] = T(this->alpha_) * (T(4.0) * d_k[0] - d_up[0] - d_dn[0] - d_lf[0] - d_rt[0]);
   }
 
   double& alpha_;

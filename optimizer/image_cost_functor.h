@@ -24,7 +24,7 @@ public:
     Eigen::Matrix<T, 3, 1> M = this->vec_M_.cast<T>();
     Eigen::Matrix<T, 3, 1> D = this->vec_D_.cast<T>();
     T depth_k = depth_k_vec(0, 0);
-    T x_pro = (M(1)*depth_k + D(1)) / (M(3)*depth_k + D(3));
+    T x_pro = (M(0)*depth_k + D(0)) / (M(2)*depth_k + D(2));
     T y_pro = T(-this->epi_A_/this->epi_B_) * x_pro + T(1/this->epi_B_);
 
     // Get img_k_head

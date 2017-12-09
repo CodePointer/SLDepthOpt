@@ -25,4 +25,4 @@ add_executable(DepthOptimization
 
 target_link_libraries(DepthOptimization
         ceres
-        ${OPENCV_LIBS})
+        ${OpenCV_LIBS})

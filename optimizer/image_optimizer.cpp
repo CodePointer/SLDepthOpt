@@ -11,6 +11,7 @@ ImageOptimizer::ImageOptimizer(
     ImgMatrix epi_mat_A, ImgMatrix epi_mat_B,
     ImgMatrix mat_M, ImgMatrix mat_D) : pattern_img_(pattern_img),
                                         weight_img_(weight_img) {
+  this->problem_ = nullptr;
   this->depth_mat_ = depth_mat;
   this->img_obs_ = img_obs;
   this->img_mask_ = img_mask;
@@ -90,7 +91,7 @@ void ImageOptimizer::AddRegularResidualBlock(int h, int w) {
   int idx_dn = (h + 1) * kCamWidth + w;
 
   ceres::CostFunction * cost_fun =
-      new ceres::AutoDiffCostFunction<RegularCostFunctor, 1, 1, 1, 1, 1>(
+      new ceres::AutoDiffCostFunction<RegularCostFunctor, 1, 1, 1, 1, 1, 1>(
           new RegularCostFunctor(this->alpha_));
   this->problem_->AddResidualBlock(cost_fun, NULL,
                                    &this->depth_mat_.data()[idx_k],

@@ -1,9 +1,6 @@
-#include <iostream>
-#include <static_para.h>
-#include <fstream>
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui.hpp>
 #include "image_optimizer.h"
+#include <opencv2/opencv.hpp>
+
 
 ImgMatrix LoadTxtFileToMatrix(std::string file_name, int kHeight, int kWidth) {
   ImgMatrix result(kHeight, kWidth);
@@ -22,11 +19,13 @@ ImgMatrix LoadTxtFileToMatrix(std::string file_name, int kHeight, int kWidth) {
 ImgMatrix LoadPngFileToMatrix(std::string file_name, int kHeight, int kWidth) {
   ImgMatrix result(kHeight, kWidth);
   cv::Mat img;
-  img = cv::imread(file_name);
+  img = cv::imread(file_name.c_str());
   for (int h = 0; h < kHeight; h++) {
     for (int w = 0; w < kWidth; w++) {
       uchar tmp;
       tmp = img.at<uchar>(h, w);
+      if (tmp > 50)
+        double tmp1 = tmp;
       result(h, w) = (double)tmp;
     }
   }
@@ -58,9 +57,9 @@ int main() {
                                             kCamHeight, kCamWidth);
   ImgMatrix mask_mat = LoadTxtFileToMatrix("mask.txt",
                                            kCamHeight, kCamWidth);
-  ImgMatrix epi_A_mat = LoadTxtFileToMatrix("EpiLineA.txt",
+  ImgMatrix epi_A_mat = LoadTxtFileToMatrix("EpiLine_A.txt",
                                             kCamHeight, kCamWidth);
-  ImgMatrix epi_B_mat = LoadTxtFileToMatrix("EpiLineB.txt",
+  ImgMatrix epi_B_mat = LoadTxtFileToMatrix("EpiLine_B.txt",
                                             kCamHeight, kCamWidth);
   ImgMatrix mat_M = LoadTxtFileToMatrix("Mat_M.txt",
                                         3, kCamHeight*kCamWidth);
