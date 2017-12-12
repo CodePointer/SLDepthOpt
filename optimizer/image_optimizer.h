@@ -11,6 +11,8 @@
 #include <static_para.h>
 #include <image_cost_functor.h>
 #include <fstream>
+#include "regular_cost_functor.h"
+#include "deform_cost_functor.h"
 
 class ImageOptimizer {
 public:

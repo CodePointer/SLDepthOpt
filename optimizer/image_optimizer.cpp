@@ -3,7 +3,6 @@
 //
 
 #include "image_optimizer.h"
-#include "regular_cost_functor.h"
 
 ImageOptimizer::ImageOptimizer(
     ImgMatrix depth_mat, ImgMatrix & pattern_img, ImgMatrix & weight_img,
@@ -21,10 +20,10 @@ ImageOptimizer::ImageOptimizer(
   this->mat_D_ = mat_D;
 
   this->alpha_ = alpha;
-  ceres::Grid2D<double, 1> * pat_grid = new ceres::Grid2D<double, 1>(
+  auto * pat_grid = new ceres::Grid2D<double, 1>(
       this->pattern_img_.data(), 0, kProHeight, 0, kProWidth);
   this->pattern_ = new ceres::BiCubicInterpolator<ceres::Grid2D<double, 1>>(*pat_grid);
-  ceres::Grid2D<double, 1> * wet_grid = new ceres::Grid2D<double, 1>(
+  auto * wet_grid = new ceres::Grid2D<double, 1>(
       this->weight_img_.data(), 0, kProHeight, 0, kProWidth);
   this->weight_ = new ceres::BiCubicInterpolator<ceres::Grid2D<double, 1>>(*wet_grid);
 }
@@ -46,6 +45,7 @@ ImgMatrix ImageOptimizer::Run() {
     this->problem_ = nullptr;
   }
   this->problem_ = new ceres::Problem;
+  int grid_size = 15;
 
   int block_num = 0;
   for (int h = 0; h < kCamHeight; h++) {
@@ -53,7 +53,9 @@ ImgMatrix ImageOptimizer::Run() {
       if (this->img_mask_(h, w) <= 0.5) {
         continue;
       }
+      // Data
       this->AddDataResidualBlock(h, w);
+      // Regular
       if ((h >= 1) && (h < kCamHeight - 1) && (w >= 1) && (w < kCamWidth - 1)) {
         bool valid_up = this->img_mask_(h-1, w) > 0.5;
         bool valid_dn = this->img_mask_(h+1, w) > 0.5;
@@ -72,6 +74,14 @@ ImgMatrix ImageOptimizer::Run() {
 }
 
 void ImageOptimizer::AddDataResidualBlock(int h, int w) {
+  // Set grid_range, pos_k
+  Eigen::Matrix<double, 2, 2> grid_range;
+  grid_range(0, 0) = floor(h / 15) * 15;
+  grid_range(0, 1) = (floor(h / 15) + 1) * 15;
+  grid_range(1, 0) = floor(w / 15) * 15;
+  grid_range(1, 1) = (floor(w / 15) + 1) * 15;
+  Eigen::Matrix<double, 2, 1> pos_k;
+  pos_k << h, w;
   int cvec_idx = h*kCamWidth + w;
   double img_k = this->img_obs_(h, w);
   Eigen::Matrix<double, 3, 1> vec_M, vec_D;
@@ -81,14 +91,19 @@ void ImageOptimizer::AddDataResidualBlock(int h, int w) {
   epi_A = this->epi_mat_A_(h, w);
   epi_B = this->epi_mat_B_(h, w);
 
-//  double x = 0;
-//  pattern_->Evaluate(119.53, 556.65, &x);
+  int ul_idx = int(grid_range(0, 0) * kCamWidth + grid_range(0, 1));
+  int ur_idx = int(grid_range(0, 0) * kCamWidth + grid_range(1, 1));
+  int dl_idx = int(grid_range(1, 0) * kCamWidth + grid_range(0, 1));
+  int dr_idx = int(grid_range(1, 0) * kCamWidth + grid_range(1, 1));
   ceres::CostFunction * cost_fun =
-      new ceres::AutoDiffCostFunction<ImageCostFunctor, 1, 1>(
-          new ImageCostFunctor(*pattern_, *weight_, cvec_idx, img_k, vec_M,
-                               vec_D, epi_A, epi_B));
-  this->problem_->AddResidualBlock(cost_fun, NULL,
-                                   &this->depth_mat_.data()[cvec_idx]);
+      new ceres::AutoDiffCostFunction<DeformCostFunctor, 1, 1, 1, 1, 1>(
+          new DeformCostFunctor(*pattern_, img_k, vec_M, vec_D, epi_A, epi_B,
+                               grid_range, pos_k));
+  this->problem_->AddResidualBlock(cost_fun, nullptr,
+                                   &this->depth_mat_.data()[ul_idx],
+                                   &this->depth_mat_.data()[ur_idx],
+                                   &this->depth_mat_.data()[dl_idx],
+                                   &this->depth_mat_.data()[dr_idx]);
 }
 
 void ImageOptimizer::AddRegularResidualBlock(int h, int w) {
@@ -101,7 +116,7 @@ void ImageOptimizer::AddRegularResidualBlock(int h, int w) {
   ceres::CostFunction * cost_fun =
       new ceres::AutoDiffCostFunction<RegularCostFunctor, 1, 1, 1, 1, 1, 1>(
           new RegularCostFunctor(this->alpha_));
-  this->problem_->AddResidualBlock(cost_fun, NULL,
+  this->problem_->AddResidualBlock(cost_fun, nullptr,
                                    &this->depth_mat_.data()[idx_k],
                                    &this->depth_mat_.data()[idx_up],
                                    &this->depth_mat_.data()[idx_lt],
@@ -111,10 +126,10 @@ void ImageOptimizer::AddRegularResidualBlock(int h, int w) {
 
 void ImageOptimizer::optimize() {
   ceres::Solver::Options options;
-  options.gradient_tolerance = 1e-10;
-  options.function_tolerance = 1e-10;
+  options.gradient_tolerance = 1e-8;
+  options.function_tolerance = 1e-8;
   options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
-  options.max_num_iterations = 100;
+  options.max_num_iterations = 50;
   options.minimizer_progress_to_stdout = true;
   ceres::Solver::Summary summary;
 

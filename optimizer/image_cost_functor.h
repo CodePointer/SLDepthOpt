@@ -36,7 +36,7 @@ public:
     this->weight_.Evaluate(y_pro + T(0.5), x_pro + T(0.5), &weight_k);
 
     // Set residual
-    sResiduals[0] = (img_k_head - T(this->img_k_));
+    sResiduals[0] = (weight_k + T(0.01)) * (img_k_head - T(this->img_k_));
 
     if (ceres::IsNaN(sResiduals[0])) {
       system("PAUSE");

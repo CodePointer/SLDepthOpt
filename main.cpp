@@ -50,12 +50,12 @@ void SaveMatrxToTxtFile(std::string file_name, ImgMatrix img_mat,
 
 int main() {
   // Load: pattern, grid(from pattern.txt, grid.txt)
-  double alpha = 1.0;
+  double alpha = 100.0;
   ImgMatrix pattern_img = LoadTxtFileToMatrix("pattern.txt",
                                               kProHeight, kProWidth);
   ImgMatrix weight_img = LoadTxtFileToMatrix("weight.txt",
                                              kProHeight, kProWidth);
-  ImgMatrix img_obs = LoadPngFileToMatrix("img.png",
+  ImgMatrix img_obs = LoadPngFileToMatrix("img_norm.png",
                                           kCamHeight, kCamWidth);
   ImgMatrix depth_mat = LoadTxtFileToMatrix("depth.txt",
                                             kCamHeight, kCamWidth);
@@ -81,7 +81,7 @@ int main() {
   ImageOptimizer opt(depth_mat, pattern_img, weight_img, alpha,
                      img_obs, mask_mat, epi_A_mat, epi_B_mat, mat_M, mat_D);
   ImgMatrix final_depth = opt.Run();
-  SaveMatrxToTxtFile("output_depth.txt", final_depth, kCamHeight, kCamWidth);
+  SaveMatrxToTxtFile("output_depth_100.txt", final_depth, kCamHeight, kCamWidth);
 
   return 0;
 }

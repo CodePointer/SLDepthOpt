@@ -21,7 +21,7 @@ add_executable(DepthOptimization
         optimizer/image_cost_functor.cpp
         global/static_para.h
         optimizer/image_optimizer.cpp
-        optimizer/image_optimizer.h optimizer/regular_cost_functor.cpp optimizer/regular_cost_functor.h)
+        optimizer/image_optimizer.h optimizer/regular_cost_functor.cpp optimizer/regular_cost_functor.h optimizer/deform_cost_functor.cpp optimizer/deform_cost_functor.h)
 
 target_link_libraries(DepthOptimization
         ceres
