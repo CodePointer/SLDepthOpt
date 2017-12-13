@@ -45,7 +45,6 @@ ImgMatrix ImageOptimizer::Run() {
     this->problem_ = nullptr;
   }
   this->problem_ = new ceres::Problem;
-  int grid_size = 15;
 
   int block_num = 0;
   for (int h = 0; h < kCamHeight; h++) {

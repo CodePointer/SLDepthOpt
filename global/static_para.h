@@ -13,6 +13,7 @@ const int kCamVecSize = kCamHeight * kCamWidth;
 const int kProHeight = 800;
 const int kProWidth = 1280;
 
+const int kGridSize = 15;
 typedef Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> ImgMatrix;
 
 #endif //DEPTHOPTIMIZATION_STATIC_PARA_H
